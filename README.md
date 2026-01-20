@@ -7,6 +7,67 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Sagittarius Guns CRM
+
+Prosty system zarządzania bronią zbudowany w Laravel z wykorzystaniem Filament.
+
+### Funkcje
+
+- **Lista broni** z paginacją i wyszukiwaniem po nazwie
+- **Dodawanie broni** z następującymi polami:
+    - Nazwa (wymagane)
+    - Opis (opcjonalne)
+    - Cena (opcjonalne)
+    - Zdjęcia (do 10 plików, każdy do 20MB)
+- **Edycja i usuwanie** broni
+- **Responsywny interfejs** administratora
+
+### Logowanie administratora
+
+**Email:** `biuro@letscode.it`  
+**Hasło:** `asdasdasd`  
+**Imię i nazwisko:** Karol Sójka
+
+### Uruchomienie aplikacji
+
+1. Zainstaluj zależności PHP:
+
+```bash
+composer install
+```
+
+2. Zainstaluj zależności JavaScript:
+
+```bash
+npm install
+```
+
+3. Skompiluj assets:
+
+```bash
+npm run build
+```
+
+4. Uruchom migracje:
+
+```bash
+php artisan migrate
+```
+
+5. Uruchom seeder (aby utworzyć administratora):
+
+```bash
+php artisan db:seed
+```
+
+6. Uruchom serwer deweloperski:
+
+```bash
+php artisan serve
+```
+
+7. Przejdź do panelu administratora: `http://localhost:8000/admin`
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
