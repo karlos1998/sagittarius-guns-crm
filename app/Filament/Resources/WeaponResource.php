@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Storage;
 
 class WeaponResource extends Resource
 {
@@ -54,7 +55,7 @@ class WeaponResource extends Resource
                     ->imageEditor()
                     ->columnSpanFull()
                     ->label('Zdjęcia')
-                    ->disk('public')
+                    ->disk('s3')
                     ->directory('weapons'),
             ]);
     }
@@ -94,7 +95,7 @@ class WeaponResource extends Resource
                             return [];
                         }
                         return collect($record->photos)->map(function ($photo) {
-                            return asset('storage/' . $photo);
+                            return Storage::disk('s3')->url($photo);
                         })->toArray();
                     }),
 
