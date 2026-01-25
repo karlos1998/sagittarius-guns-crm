@@ -6,11 +6,11 @@
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
-        "php": "^8.2",
+        "php": "^8.4",
         "aws/aws-sdk-php": "^3.300",
         "filament/filament": "^3.2",
-        "laravel/framework": "^11.0",
-        "laravel/tinker": "^2.9.0",
+        "laravel/framework": "^12.0",
+        "laravel/tinker": "^2.10.1",
         "league/flysystem-aws-s3-v3": "3.15.0"
     },
     "require-dev": {
