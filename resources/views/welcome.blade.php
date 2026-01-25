@@ -4,6 +4,10 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
+        @if(config('app.force_https'))
+            <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+        @endif
+
         <title>{{ config('app.name', 'Laravel') }}</title>
 
         <!-- Fonts -->
