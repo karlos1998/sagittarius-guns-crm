@@ -13,6 +13,7 @@ class WeaponList extends Component
     public $weapons;
     public $listedWeapons = [];
     public $listingErrors = []; // weaponId => ['error' => '', 'response_file' => '']
+    public $isLoggedIn = false;
 
     protected $listeners = ['refreshWeapons' => '$refresh'];
 
@@ -20,6 +21,23 @@ class WeaponList extends Component
     {
         $this->weapons = Weapon::orderBy('created_at', 'desc')->get();
         $this->listedWeapons = Cache::get('listed_weapons', []);
+
+        // Check login status
+        $service = new WeaponListingService();
+        $this->isLoggedIn = $service->isLoggedIn();
+    }
+
+    public function loginToOtobron()
+    {
+        $service = new WeaponListingService();
+        $result = $service->login();
+
+        if ($result['success']) {
+            $this->isLoggedIn = true;
+            $this->dispatch('login-success', message: $result['message']);
+        } else {
+            $this->dispatch('login-error', message: $result['message']);
+        }
     }
 
     public function listWeapon($weaponId)

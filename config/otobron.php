@@ -29,8 +29,12 @@ return [
         'lng' => env('OTOBRON_LNG', '22.098898574212722'),
     ],
 
-    // Cookies i autoryzacja
-    'cookies' => env('OTOBRON_COOKIES', ''),
+    // Login credentials
+    'username' => env('OTOBRON_USERNAME', ''),
+    'password' => env('OTOBRON_PASSWORD', ''),
+
+    // Login URL
+    'login_url' => 'https://otobron.pl/my-account/',
 
     // Domyślne wartości
     'defaults' => [

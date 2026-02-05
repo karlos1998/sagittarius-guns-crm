@@ -4,11 +4,133 @@ namespace App\Services;
 
 use App\Models\Weapon;
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class WeaponListingService
 {
+    const CACHE_KEY_COOKIES = 'otobron_session_cookies';
+
+    /**
+     * Login to otobron.pl and store session cookies
+     *
+     * @return array
+     */
+    public function login(): array
+    {
+        $config = config('otobron');
+
+        try {
+            $client = new Client(['allow_redirects' => false]); // Don't follow redirects
+
+            // Base cookies for the request
+            $baseCookies = 'cookieyes-consent=consentid:QU5KeUliUjFlaUl5TVdWQ25tQ2tpUGRTcVpmaTdvWDg,consent:yes,action:yes,necessary:yes,functional:yes,analytics:yes,performance:yes,advertisement:yes,other:yes; wp-wpml_current_language=pl';
+
+            $response = $client->post($config['login_url'], [
+                'headers' => [
+                    'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                    'Accept-Language' => 'pl,en-US;q=0.9,en;q=0.8',
+                    'Cache-Control' => 'max-age=0',
+                    'Content-Type' => 'application/x-www-form-urlencoded',
+                    'Cookie' => $baseCookies,
+                    'Origin' => 'https://otobron.pl',
+                    'Referer' => 'https://otobron.pl/my-account/',
+                    'Sec-Fetch-Dest' => 'document',
+                    'Sec-Fetch-Mode' => 'navigate',
+                    'Sec-Fetch-Site' => 'same-origin',
+                    'Sec-Fetch-User' => '?1',
+                    'Upgrade-Insecure-Requests' => '1',
+                    'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
+                ],
+                'form_params' => [
+                    'username' => $config['username'],
+                    'password' => $config['password'],
+                    'woocommerce-login-nonce' => '3e94758400', // This might need to be dynamic
+                    '_wp_http_referer' => '/my-account/',
+                    'login' => 'Login',
+                    'redirect' => '',
+                ],
+            ]);
+
+            // Extract cookies from Set-Cookie headers
+            $setCookieHeaders = $response->getHeader('Set-Cookie');
+            $cookies = $this->extractCookiesFromHeaders($setCookieHeaders);
+
+            if (empty($cookies)) {
+                return [
+                    'success' => false,
+                    'message' => 'Nie udało się uzyskać cookies z odpowiedzi',
+                ];
+            }
+
+            // Store cookies in cache (30 days)
+            Cache::put(self::CACHE_KEY_COOKIES, $cookies, now()->addDays(30));
+
+            Log::info('Successfully logged in to otobron.pl', ['cookies' => $cookies]);
+
+            return [
+                'success' => true,
+                'message' => 'Zalogowano pomyślnie',
+                'cookies' => $cookies,
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Failed to login to otobron.pl: ' . $e->getMessage());
+
+            return [
+                'success' => false,
+                'message' => 'Błąd podczas logowania: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Extract cookies from Set-Cookie headers
+     *
+     * @param array $setCookieHeaders
+     * @return string
+     */
+    protected function extractCookiesFromHeaders(array $setCookieHeaders): string
+    {
+        $cookies = [];
+
+        foreach ($setCookieHeaders as $header) {
+            // Extract cookie name and value (before first semicolon)
+            if (preg_match('/^([^=]+)=([^;]+)/', $header, $matches)) {
+                $cookieName = $matches[1];
+                $cookieValue = $matches[2];
+
+                // We mainly need wordpress_logged_in_* cookie
+                if (str_starts_with($cookieName, 'wordpress_logged_in_') ||
+                    str_starts_with($cookieName, 'wp-wpml_')) {
+                    $cookies[] = "{$cookieName}={$cookieValue}";
+                }
+            }
+        }
+
+        return implode('; ', $cookies);
+    }
+
+    /**
+     * Get cached cookies or return empty string
+     *
+     * @return string
+     */
+    public function getCachedCookies(): string
+    {
+        return Cache::get(self::CACHE_KEY_COOKIES, '');
+    }
+
+    /**
+     * Check if user is logged in (has cached cookies)
+     *
+     * @return bool
+     */
+    public function isLoggedIn(): bool
+    {
+        return !empty($this->getCachedCookies());
+    }
     /**
      * List a weapon for sale on otobron.pl platform.
      *
@@ -204,9 +326,10 @@ class WeaponListingService
                 'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
             ];
 
-            // Add cookies if configured
-            if (!empty($config['cookies'])) {
-                $headers['Cookie'] = $config['cookies'];
+            // Add cached cookies if available
+            $cookies = $this->getCachedCookies();
+            if (!empty($cookies)) {
+                $headers['Cookie'] = $cookies;
             }
 
             $response = $client->post($url, [
