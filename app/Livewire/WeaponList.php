@@ -28,14 +28,18 @@ class WeaponList extends Component
         try {
             $result = $service->listWeapon($weaponId);
 
-            if ($result['success']) {
-                // Add to listed weapons array
-                $this->listedWeapons[] = $weaponId;
+            if ($result['success'] && $result['published']) {
+                // Store weapon ID and listing URL in cache
+                $this->listedWeapons[$weaponId] = $result['listing_url'] ?? null;
 
                 // Store in cache
                 Cache::put('listed_weapons', $this->listedWeapons, now()->addDays(30));
 
-                $this->dispatch('weapon-listed', weaponId: $weaponId, responseFile: $result['response_file'] ?? null);
+                $this->dispatch('weapon-listed',
+                    weaponId: $weaponId,
+                    listingUrl: $result['listing_url'] ?? null,
+                    responseFile: $result['response_file'] ?? null
+                );
             } else {
                 // Dispatch error with response file path
                 $this->dispatch('weapon-listing-error',
@@ -55,7 +59,12 @@ class WeaponList extends Component
 
     public function isListed($weaponId)
     {
-        return in_array($weaponId, $this->listedWeapons);
+        return isset($this->listedWeapons[$weaponId]);
+    }
+
+    public function getListingUrl($weaponId)
+    {
+        return $this->listedWeapons[$weaponId] ?? null;
     }
 
     public function getWeaponImageUrl($photos)

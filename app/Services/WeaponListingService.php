@@ -30,12 +30,14 @@ class WeaponListingService
             // Send request to otobron.pl
             $response = $this->sendToOtobron($multipartData);
 
-            if ($response['success']) {
+            if ($response['success'] && ($response['published'] ?? false)) {
                 Log::info("Weapon {$weaponId} listed successfully on otobron.pl. Response saved to: {$response['response_file']}");
                 return [
                     'success' => true,
+                    'published' => true,
                     'message' => 'Broń została pomyślnie wystawiona na otobron.pl',
                     'weapon_id' => $weaponId,
+                    'listing_url' => $response['listing_url'] ?? null,
                     'response_file' => $response['response_file'] ?? null,
                 ];
             }
@@ -43,6 +45,7 @@ class WeaponListingService
             Log::error("Failed to list weapon {$weaponId}. Response saved to: {$response['response_file']}");
             return [
                 'success' => false,
+                'published' => false,
                 'message' => 'Nie udało się wystawić broni',
                 'error' => $response['error'] ?? 'Unknown error',
                 'response_file' => $response['response_file'] ?? null,
@@ -53,6 +56,7 @@ class WeaponListingService
 
             return [
                 'success' => false,
+                'published' => false,
                 'message' => 'Wystąpił błąd podczas wystawiania broni',
                 'error' => $e->getMessage(),
             ];
@@ -234,19 +238,27 @@ class WeaponListingService
             file_put_contents($path, $debugContent);
             Log::info("Otobron response saved to: {$path}");
 
-            if ($statusCode >= 200 && $statusCode < 400) {
+            // Check if listing was successfully published
+            $isPublished = $this->checkIfPublished($body);
+            $listingUrl = $this->extractListingUrl($body);
+
+            if ($statusCode >= 200 && $statusCode < 400 && $isPublished) {
+                Log::info("Weapon listed successfully. Listing URL: " . ($listingUrl ?? 'N/A'));
                 return [
                     'success' => true,
                     'status_code' => $statusCode,
                     'response_file' => $path,
+                    'listing_url' => $listingUrl,
+                    'published' => true,
                 ];
             }
 
             return [
                 'success' => false,
-                'error' => "HTTP {$statusCode}: " . substr($body, 0, 500),
+                'error' => "HTTP {$statusCode}: " . ($isPublished ? 'Unknown error' : 'Listing not published'),
                 'status_code' => $statusCode,
                 'response_file' => $path,
+                'published' => false,
             ];
 
         } catch (\Exception $e) {
@@ -255,5 +267,32 @@ class WeaponListingService
                 'error' => $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Check if listing was successfully published
+     *
+     * @param string $html
+     * @return bool
+     */
+    protected function checkIfPublished(string $html): bool
+    {
+        return str_contains($html, 'Ogłoszenie zostało pomyślnie opublikowane');
+    }
+
+    /**
+     * Extract listing URL from HTML response
+     *
+     * @param string $html
+     * @return string|null
+     */
+    protected function extractListingUrl(string $html): ?string
+    {
+        // Pattern: <a href="https://otobron.pl/ogloszenia/.../">kliknij tutaj</a>
+        if (preg_match('/<a href="(https:\/\/otobron\.pl\/ogloszenia\/[^"]+)">kliknij tutaj<\/a>/', $html, $matches)) {
+            return $matches[1];
+        }
+
+        return null;
     }
 }

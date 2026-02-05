@@ -48,6 +48,23 @@
                         <span class="text-2xl font-bold text-green-600">${{ number_format($weapon->price, 2) }}</span>
                     </div>
 
+                    <!-- Listed URL -->
+                    @if($this->isListed($weapon->id) && $this->getListingUrl($weapon->id))
+                        <a
+                            href="{{ $this->getListingUrl($weapon->id) }}"
+                            target="_blank"
+                            class="mb-3 flex items-center justify-center space-x-2 text-green-600 hover:text-green-700 font-medium text-sm"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Zobacz ogłoszenie na otobron.pl</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                        </a>
+                    @endif
+
                     <!-- Action Button -->
                     <div wire:loading.remove wire:target="listWeapon({{ $weapon->id }})">
                         @if($this->isListed($weapon->id))
@@ -101,21 +118,34 @@
 <script>
     window.addEventListener('weapon-listed', event => {
         console.log('✅ Weapon listed successfully:', event.detail.weaponId);
+        console.log('🔗 Listing URL:', event.detail.listingUrl);
+
+        let message = 'Broń została pomyślnie wystawiona na otobron.pl!';
+
+        if (event.detail.listingUrl) {
+            message += '\n\n🔗 Link do ogłoszenia:\n' + event.detail.listingUrl;
+        }
+
         if (event.detail.responseFile) {
             console.log('📄 Response saved to:', event.detail.responseFile);
-            alert('Broń wystawiona!\n\nResponse zapisany w:\n' + event.detail.responseFile);
+            message += '\n\n📄 Response zapisany w:\n' + event.detail.responseFile;
         }
+
+        alert(message);
     });
 
     window.addEventListener('weapon-listing-error', event => {
         console.error('❌ Failed to list weapon:', event.detail.weaponId);
         console.error('Error:', event.detail.error);
+
+        let message = 'Błąd podczas wystawiania!\n\n' + event.detail.error;
+
         if (event.detail.responseFile) {
             console.log('📄 Response saved to:', event.detail.responseFile);
-            alert('Błąd podczas wystawiania!\n\n' + event.detail.error + '\n\nResponse zapisany w:\n' + event.detail.responseFile);
-        } else {
-            alert('Błąd podczas wystawiania!\n\n' + event.detail.error);
+            message += '\n\n📄 Response zapisany w:\n' + event.detail.responseFile;
         }
+
+        alert(message);
     });
 </script>
 @endpush
