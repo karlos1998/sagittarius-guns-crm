@@ -12,6 +12,7 @@ class WeaponList extends Component
 {
     public $weapons;
     public $listedWeapons = [];
+    public $listingErrors = []; // weaponId => ['error' => '', 'response_file' => '']
 
     protected $listeners = ['refreshWeapons' => '$refresh'];
 
@@ -29,6 +30,9 @@ class WeaponList extends Component
             $result = $service->listWeapon($weaponId);
 
             if ($result['success'] && $result['published']) {
+                // Clear any previous error for this weapon
+                unset($this->listingErrors[$weaponId]);
+
                 // Store weapon ID and listing URL in cache
                 $this->listedWeapons[$weaponId] = $result['listing_url'] ?? null;
 
@@ -41,7 +45,12 @@ class WeaponList extends Component
                     responseFile: $result['response_file'] ?? null
                 );
             } else {
-                // Dispatch error with response file path
+                // Store error with response file path
+                $this->listingErrors[$weaponId] = [
+                    'error' => $result['message'] ?? 'Unknown error',
+                    'response_file' => $result['response_file'] ?? null,
+                ];
+
                 $this->dispatch('weapon-listing-error',
                     weaponId: $weaponId,
                     error: $result['message'] ?? 'Unknown error',
@@ -49,6 +58,12 @@ class WeaponList extends Component
                 );
             }
         } catch (\Exception $e) {
+            // Store error
+            $this->listingErrors[$weaponId] = [
+                'error' => $e->getMessage(),
+                'response_file' => null,
+            ];
+
             $this->dispatch('weapon-listing-error',
                 weaponId: $weaponId,
                 error: $e->getMessage(),
@@ -65,6 +80,30 @@ class WeaponList extends Component
     public function getListingUrl($weaponId)
     {
         return $this->listedWeapons[$weaponId] ?? null;
+    }
+
+    public function hasError($weaponId)
+    {
+        return isset($this->listingErrors[$weaponId]);
+    }
+
+    public function getError($weaponId)
+    {
+        return $this->listingErrors[$weaponId] ?? null;
+    }
+
+    public function getResponseUrl($weaponId)
+    {
+        $error = $this->getError($weaponId);
+        if (!$error || !$error['response_file']) {
+            return null;
+        }
+
+        // Convert file path to URL
+        // storage/app/otobron_responses/otobron_response_2026-02-05_19-30-21.html
+        // -> /otobron-response/otobron_response_2026-02-05_19-30-21.html
+        $filename = basename($error['response_file']);
+        return url("/otobron-response/{$filename}");
     }
 
     public function getWeaponImageUrl($photos)

@@ -48,6 +48,32 @@
                         <span class="text-2xl font-bold text-green-600">${{ number_format($weapon->price, 2) }}</span>
                     </div>
 
+                    <!-- Error Alert -->
+                    @if($this->hasError($weapon->id))
+                        @php
+                            $error = $this->getError($weapon->id);
+                            $responseUrl = $this->getResponseUrl($weapon->id);
+                        @endphp
+                        <div class="mb-3 bg-red-50 border border-red-200 rounded-lg p-3">
+                            <div class="flex items-start space-x-2">
+                                <svg class="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                </svg>
+                                <div class="flex-1">
+                                    <p class="text-sm text-red-800 font-medium">{{ $error['error'] }}</p>
+                                    @if($responseUrl)
+                                        <a href="{{ $responseUrl }}" target="_blank" class="text-xs text-red-600 hover:text-red-800 underline flex items-center space-x-1 mt-1">
+                                            <span>Zobacz szczegóły odpowiedzi</span>
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            </svg>
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
                     <!-- Listed URL -->
                     @if($this->isListed($weapon->id) && $this->getListingUrl($weapon->id))
                         <a
@@ -119,33 +145,15 @@
     window.addEventListener('weapon-listed', event => {
         console.log('✅ Weapon listed successfully:', event.detail.weaponId);
         console.log('🔗 Listing URL:', event.detail.listingUrl);
-
-        let message = 'Broń została pomyślnie wystawiona na otobron.pl!';
-
-        if (event.detail.listingUrl) {
-            message += '\n\n🔗 Link do ogłoszenia:\n' + event.detail.listingUrl;
-        }
-
-        if (event.detail.responseFile) {
-            console.log('📄 Response saved to:', event.detail.responseFile);
-            message += '\n\n📄 Response zapisany w:\n' + event.detail.responseFile;
-        }
-
-        alert(message);
+        console.log('📄 Response saved to:', event.detail.responseFile);
+        // No alert - success is visible in the UI
     });
 
     window.addEventListener('weapon-listing-error', event => {
         console.error('❌ Failed to list weapon:', event.detail.weaponId);
         console.error('Error:', event.detail.error);
-
-        let message = 'Błąd podczas wystawiania!\n\n' + event.detail.error;
-
-        if (event.detail.responseFile) {
-            console.log('📄 Response saved to:', event.detail.responseFile);
-            message += '\n\n📄 Response zapisany w:\n' + event.detail.responseFile;
-        }
-
-        alert(message);
+        console.log('📄 Response saved to:', event.detail.responseFile);
+        // Error is displayed in the UI
     });
 </script>
 @endpush

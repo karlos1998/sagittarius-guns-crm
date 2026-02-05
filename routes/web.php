@@ -9,3 +9,14 @@ Route::get('/', function () {
 Route::get('/weapons', function () {
     return view('weapons.index');
 });
+
+// Route to view otobron response HTML files
+Route::get('/otobron-response/{filename}', function ($filename) {
+    $path = storage_path("app/otobron_responses/{$filename}");
+
+    if (!file_exists($path)) {
+        abort(404);
+    }
+
+    return response()->file($path);
+})->where('filename', '.*\.html');
