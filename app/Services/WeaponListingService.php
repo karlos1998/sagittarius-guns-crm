@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\Weapon;
-use Illuminate\Support\Facades\Http;
+use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -31,18 +31,21 @@ class WeaponListingService
             $response = $this->sendToOtobron($multipartData);
 
             if ($response['success']) {
-                Log::info("Weapon {$weaponId} listed successfully on otobron.pl");
+                Log::info("Weapon {$weaponId} listed successfully on otobron.pl. Response saved to: {$response['response_file']}");
                 return [
                     'success' => true,
                     'message' => 'Broń została pomyślnie wystawiona na otobron.pl',
                     'weapon_id' => $weaponId,
+                    'response_file' => $response['response_file'] ?? null,
                 ];
             }
 
+            Log::error("Failed to list weapon {$weaponId}. Response saved to: {$response['response_file']}");
             return [
                 'success' => false,
                 'message' => 'Nie udało się wystawić broni',
                 'error' => $response['error'] ?? 'Unknown error',
+                'response_file' => $response['response_file'] ?? null,
             ];
 
         } catch (\Exception $e) {
@@ -180,40 +183,69 @@ class WeaponListingService
         $url = $config['api_url'] . '?listing_type=' . $config['listing_type'];
 
         try {
-            $request = Http::asMultipart()
-                ->withHeaders([
-                    'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-                    'Accept-Language' => 'pl,en-US;q=0.9,en;q=0.8',
-                    'Cache-Control' => 'max-age=0',
-                    'Origin' => 'https://otobron.pl',
-                    'Referer' => 'https://otobron.pl/add-listing/?listing_type=bron',
-                    'Sec-Fetch-Dest' => 'document',
-                    'Sec-Fetch-Mode' => 'navigate',
-                    'Sec-Fetch-Site' => 'same-origin',
-                    'Sec-Fetch-User' => '?1',
-                    'Upgrade-Insecure-Requests' => '1',
-                    'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
-                ]);
+            $client = new Client();
+
+            $headers = [
+                'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                'Accept-Language' => 'pl,en-US;q=0.9,en;q=0.8',
+                'Cache-Control' => 'max-age=0',
+                'Origin' => 'https://otobron.pl',
+                'Referer' => 'https://otobron.pl/add-listing/?listing_type=bron',
+                'Sec-Fetch-Dest' => 'document',
+                'Sec-Fetch-Mode' => 'navigate',
+                'Sec-Fetch-Site' => 'same-origin',
+                'Sec-Fetch-User' => '?1',
+                'Upgrade-Insecure-Requests' => '1',
+                'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
+            ];
 
             // Add cookies if configured
             if (!empty($config['cookies'])) {
-                $request->withHeaders(['Cookie' => $config['cookies']]);
+                $headers['Cookie'] = $config['cookies'];
             }
 
-            $response = $request->attach($multipartData)
-                ->post($url);
+            $response = $client->post($url, [
+                'headers' => $headers,
+                'multipart' => $multipartData,
+                'allow_redirects' => true,
+            ]);
 
-            if ($response->successful() || $response->redirect()) {
+            // Save response to HTML file for debugging
+            $timestamp = now()->format('Y-m-d_H-i-s');
+            $filename = "otobron_response_{$timestamp}.html";
+            $path = storage_path("app/otobron_responses/{$filename}");
+
+            // Create directory if it doesn't exist
+            if (!file_exists(dirname($path))) {
+                mkdir(dirname($path), 0755, true);
+            }
+
+            // Get response data (Guzzle API)
+            $statusCode = $response->getStatusCode();
+            $headers = $response->getHeaders();
+            $body = $response->getBody()->getContents();
+
+            // Save response with metadata
+            $debugContent = "<!-- Status Code: {$statusCode} -->\n";
+            $debugContent .= "<!-- Headers: " . json_encode($headers) . " -->\n\n";
+            $debugContent .= $body;
+
+            file_put_contents($path, $debugContent);
+            Log::info("Otobron response saved to: {$path}");
+
+            if ($statusCode >= 200 && $statusCode < 400) {
                 return [
                     'success' => true,
-                    'status_code' => $response->status(),
+                    'status_code' => $statusCode,
+                    'response_file' => $path,
                 ];
             }
 
             return [
                 'success' => false,
-                'error' => "HTTP {$response->status()}: " . $response->body(),
-                'status_code' => $response->status(),
+                'error' => "HTTP {$statusCode}: " . substr($body, 0, 500),
+                'status_code' => $statusCode,
+                'response_file' => $path,
             ];
 
         } catch (\Exception $e) {

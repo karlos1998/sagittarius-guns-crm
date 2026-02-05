@@ -100,7 +100,22 @@
 @push('scripts')
 <script>
     window.addEventListener('weapon-listed', event => {
-        console.log('Weapon listed:', event.detail.weaponId);
+        console.log('✅ Weapon listed successfully:', event.detail.weaponId);
+        if (event.detail.responseFile) {
+            console.log('📄 Response saved to:', event.detail.responseFile);
+            alert('Broń wystawiona!\n\nResponse zapisany w:\n' + event.detail.responseFile);
+        }
+    });
+
+    window.addEventListener('weapon-listing-error', event => {
+        console.error('❌ Failed to list weapon:', event.detail.weaponId);
+        console.error('Error:', event.detail.error);
+        if (event.detail.responseFile) {
+            console.log('📄 Response saved to:', event.detail.responseFile);
+            alert('Błąd podczas wystawiania!\n\n' + event.detail.error + '\n\nResponse zapisany w:\n' + event.detail.responseFile);
+        } else {
+            alert('Błąd podczas wystawiania!\n\n' + event.detail.error);
+        }
     });
 </script>
 @endpush

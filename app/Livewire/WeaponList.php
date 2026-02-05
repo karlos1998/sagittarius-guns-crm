@@ -35,10 +35,21 @@ class WeaponList extends Component
                 // Store in cache
                 Cache::put('listed_weapons', $this->listedWeapons, now()->addDays(30));
 
-                $this->dispatch('weapon-listed', weaponId: $weaponId);
+                $this->dispatch('weapon-listed', weaponId: $weaponId, responseFile: $result['response_file'] ?? null);
+            } else {
+                // Dispatch error with response file path
+                $this->dispatch('weapon-listing-error',
+                    weaponId: $weaponId,
+                    error: $result['message'] ?? 'Unknown error',
+                    responseFile: $result['response_file'] ?? null
+                );
             }
         } catch (\Exception $e) {
-            // Handle error silently for now
+            $this->dispatch('weapon-listing-error',
+                weaponId: $weaponId,
+                error: $e->getMessage(),
+                responseFile: null
+            );
         }
     }
 
