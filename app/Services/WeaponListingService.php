@@ -85,8 +85,9 @@ class WeaponListingService
     {
         $galleryImages = [];
 
-        // Skip first image (it's the cover) and take up to 5 more
-        $galleryPhotos = array_slice($photos, 1, 5);
+        // Include all photos in gallery (including first one as cover)
+        // Otobron requires at least one image in gallery
+        $galleryPhotos = array_slice($photos, 0, 6); // Take up to 6 images
 
         foreach ($galleryPhotos as $photo) {
             $imageUrl = Storage::disk('s3')->url($photo);
