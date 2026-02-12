@@ -50,7 +50,7 @@ class WeaponResource extends Resource
                 Forms\Components\FileUpload::make('photos')
                     ->multiple()
                     ->maxFiles(10)
-                    ->maxSize(20480) // 20MB in KB
+                    ->maxSize(204800) // 20MB in KB
                     ->image()
                     ->imageEditor()
                     ->columnSpanFull()
