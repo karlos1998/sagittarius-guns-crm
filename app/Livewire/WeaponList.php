@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Weapon;
+use App\Services\NetgunListingService;
 use App\Services\WeaponListingService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -12,8 +13,11 @@ class WeaponList extends Component
 {
     public $weapons;
     public $listedWeapons = [];
-    public $listingErrors = []; // weaponId => ['error' => '', 'response_file' => '']
+    public $listedWeaponsNetgun = [];
+    public $listingErrors = [];
+    public $listingErrorsNetgun = [];
     public $isLoggedIn = false;
+    public $isLoggedInNetgun = false;
 
     protected $listeners = ['refreshWeapons' => '$refresh'];
 
@@ -21,11 +25,18 @@ class WeaponList extends Component
     {
         $this->weapons = Weapon::orderBy('created_at', 'desc')->get();
         $this->listedWeapons = Cache::get('listed_weapons', []);
+        $this->listedWeaponsNetgun = Cache::get('listed_weapons_netgun', []);
 
-        // Check login status
+        // Check login status for OtoBron
         $service = new WeaponListingService();
         $this->isLoggedIn = $service->isLoggedIn();
+
+        // Check login status for Netgun
+        $netgunService = new NetgunListingService();
+        $this->isLoggedInNetgun = $netgunService->isLoggedIn();
     }
+
+    // ==================== OTOBRON METHODS ====================
 
     public function loginToOtobron()
     {
@@ -34,9 +45,9 @@ class WeaponList extends Component
 
         if ($result['success']) {
             $this->isLoggedIn = true;
-            $this->dispatch('login-success', message: $result['message']);
+            $this->dispatch('login-success', message: $result['message'], platform: 'otobron');
         } else {
-            $this->dispatch('login-error', message: $result['message']);
+            $this->dispatch('login-error', message: $result['message'], platform: 'otobron');
         }
     }
 
@@ -48,22 +59,17 @@ class WeaponList extends Component
             $result = $service->listWeapon($weaponId);
 
             if ($result['success'] && $result['published']) {
-                // Clear any previous error for this weapon
                 unset($this->listingErrors[$weaponId]);
-
-                // Store weapon ID and listing URL in cache
                 $this->listedWeapons[$weaponId] = $result['listing_url'] ?? null;
-
-                // Store in cache
                 Cache::put('listed_weapons', $this->listedWeapons, now()->addDays(30));
 
                 $this->dispatch('weapon-listed',
                     weaponId: $weaponId,
                     listingUrl: $result['listing_url'] ?? null,
-                    responseFile: $result['response_file'] ?? null
+                    responseFile: $result['response_file'] ?? null,
+                    platform: 'otobron'
                 );
             } else {
-                // Store error with response file path
                 $this->listingErrors[$weaponId] = [
                     'error' => $result['message'] ?? 'Unknown error',
                     'response_file' => $result['response_file'] ?? null,
@@ -72,11 +78,11 @@ class WeaponList extends Component
                 $this->dispatch('weapon-listing-error',
                     weaponId: $weaponId,
                     error: $result['message'] ?? 'Unknown error',
-                    responseFile: $result['response_file'] ?? null
+                    responseFile: $result['response_file'] ?? null,
+                    platform: 'otobron'
                 );
             }
         } catch (\Exception $e) {
-            // Store error
             $this->listingErrors[$weaponId] = [
                 'error' => $e->getMessage(),
                 'response_file' => null,
@@ -85,14 +91,83 @@ class WeaponList extends Component
             $this->dispatch('weapon-listing-error',
                 weaponId: $weaponId,
                 error: $e->getMessage(),
-                responseFile: null
+                responseFile: null,
+                platform: 'otobron'
             );
         }
     }
 
+    // ==================== NETGUN METHODS ====================
+
+    public function loginToNetgun()
+    {
+        $service = new NetgunListingService();
+        $result = $service->login();
+
+        if ($result['success']) {
+            $this->isLoggedInNetgun = true;
+            $this->dispatch('login-success', message: $result['message'], platform: 'netgun');
+        } else {
+            $this->dispatch('login-error', message: $result['message'], platform: 'netgun');
+        }
+    }
+
+    public function listWeaponNetgun($weaponId)
+    {
+        $service = new NetgunListingService();
+
+        try {
+            $result = $service->listWeapon($weaponId);
+
+            if ($result['success'] && $result['published']) {
+                unset($this->listingErrorsNetgun[$weaponId]);
+                $this->listedWeaponsNetgun[$weaponId] = $result['listing_url'] ?? null;
+                Cache::put('listed_weapons_netgun', $this->listedWeaponsNetgun, now()->addDays(30));
+
+                $this->dispatch('weapon-listed',
+                    weaponId: $weaponId,
+                    listingUrl: $result['listing_url'] ?? null,
+                    responseFile: $result['response_file'] ?? null,
+                    platform: 'netgun'
+                );
+            } else {
+                $this->listingErrorsNetgun[$weaponId] = [
+                    'error' => $result['message'] ?? 'Unknown error',
+                    'response_file' => $result['response_file'] ?? null,
+                ];
+
+                $this->dispatch('weapon-listing-error',
+                    weaponId: $weaponId,
+                    error: $result['message'] ?? 'Unknown error',
+                    responseFile: $result['response_file'] ?? null,
+                    platform: 'netgun'
+                );
+            }
+        } catch (\Exception $e) {
+            $this->listingErrorsNetgun[$weaponId] = [
+                'error' => $e->getMessage(),
+                'response_file' => null,
+            ];
+
+            $this->dispatch('weapon-listing-error',
+                weaponId: $weaponId,
+                error: $e->getMessage(),
+                responseFile: null,
+                platform: 'netgun'
+            );
+        }
+    }
+
+    // ==================== HELPER METHODS ====================
+
     public function isListed($weaponId)
     {
         return isset($this->listedWeapons[$weaponId]);
+    }
+
+    public function isListedNetgun($weaponId)
+    {
+        return isset($this->listedWeaponsNetgun[$weaponId]);
     }
 
     public function getListingUrl($weaponId)
@@ -100,14 +175,29 @@ class WeaponList extends Component
         return $this->listedWeapons[$weaponId] ?? null;
     }
 
+    public function getListingUrlNetgun($weaponId)
+    {
+        return $this->listedWeaponsNetgun[$weaponId] ?? null;
+    }
+
     public function hasError($weaponId)
     {
         return isset($this->listingErrors[$weaponId]);
     }
 
+    public function hasErrorNetgun($weaponId)
+    {
+        return isset($this->listingErrorsNetgun[$weaponId]);
+    }
+
     public function getError($weaponId)
     {
         return $this->listingErrors[$weaponId] ?? null;
+    }
+
+    public function getErrorNetgun($weaponId)
+    {
+        return $this->listingErrorsNetgun[$weaponId] ?? null;
     }
 
     public function getResponseUrl($weaponId)
@@ -117,11 +207,19 @@ class WeaponList extends Component
             return null;
         }
 
-        // Convert file path to URL
-        // storage/app/otobron_responses/otobron_response_2026-02-05_19-30-21.html
-        // -> /otobron-response/otobron_response_2026-02-05_19-30-21.html
         $filename = basename($error['response_file']);
         return url("/otobron-response/{$filename}");
+    }
+
+    public function getResponseUrlNetgun($weaponId)
+    {
+        $error = $this->getErrorNetgun($weaponId);
+        if (!$error || !$error['response_file']) {
+            return null;
+        }
+
+        $filename = basename($error['response_file']);
+        return url("/netgun-response/{$filename}");
     }
 
     public function getWeaponImageUrl($photos)

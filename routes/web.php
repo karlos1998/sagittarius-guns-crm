@@ -20,3 +20,14 @@ Route::get('/otobron-response/{filename}', function ($filename) {
 
     return response()->file($path);
 })->where('filename', '.*\.html');
+
+// Route to view netgun response HTML files
+Route::get('/netgun-response/{filename}', function ($filename) {
+    $path = storage_path("app/netgun_responses/{$filename}");
+
+    if (!file_exists($path)) {
+        abort(404);
+    }
+
+    return response()->file($path);
+})->where('filename', '.*\.html');

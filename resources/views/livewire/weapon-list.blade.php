@@ -6,28 +6,55 @@
         </div>
 
         <div class="flex items-center space-x-4">
+            <!-- OtoBron Login Status -->
             @if($isLoggedIn)
                 <div class="flex items-center space-x-2 text-green-600">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                     </svg>
-                    <span class="font-medium">Zalogowano</span>
+                    <span class="font-medium">OtoBron: Zalogowano</span>
                 </div>
             @else
                 <button
                     wire:click="loginToOtobron"
                     wire:loading.attr="disabled"
-                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-2 disabled:opacity-50"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors duration-200 flex items-center space-x-2 disabled:opacity-50 text-sm"
                 >
-                    <svg wire:loading.remove wire:target="loginToOtobron" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg wire:loading.remove wire:target="loginToOtobron" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                     </svg>
-                    <svg wire:loading wire:target="loginToOtobron" class="animate-spin w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg wire:loading wire:target="loginToOtobron" class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span wire:loading.remove wire:target="loginToOtobron">Zaloguj się</span>
+                    <span wire:loading.remove wire:target="loginToOtobron">Zaloguj OtoBron</span>
                     <span wire:loading wire:target="loginToOtobron">Logowanie...</span>
+                </button>
+            @endif
+
+            <!-- Netgun Login Status -->
+            @if($isLoggedInNetgun)
+                <div class="flex items-center space-x-2 text-green-600">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                    <span class="font-medium">Netgun: Zalogowano</span>
+                </div>
+            @else
+                <button
+                    wire:click="loginToNetgun"
+                    wire:loading.attr="disabled"
+                    class="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors duration-200 flex items-center space-x-2 disabled:opacity-50 text-sm"
+                >
+                    <svg wire:loading.remove wire:target="loginToNetgun" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                    </svg>
+                    <svg wire:loading wire:target="loginToNetgun" class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span wire:loading.remove wire:target="loginToNetgun">Zaloguj Netgun</span>
+                    <span wire:loading wire:target="loginToNetgun">Logowanie...</span>
                 </button>
             @endif
         </div>
@@ -77,7 +104,7 @@
                         <span class="text-2xl font-bold text-green-600">${{ number_format($weapon->price, 2) }}</span>
                     </div>
 
-                    <!-- Error Alert -->
+                    <!-- OtoBron Error Alert -->
                     @if($this->hasError($weapon->id))
                         @php
                             $error = $this->getError($weapon->id);
@@ -89,7 +116,7 @@
                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                                 </svg>
                                 <div class="flex-1">
-                                    <p class="text-sm text-red-800 font-medium">{{ $error['error'] }}</p>
+                                    <p class="text-sm text-red-800 font-medium">OtoBron: {{ $error['error'] }}</p>
                                     @if($responseUrl)
                                         <a href="{{ $responseUrl }}" target="_blank" class="text-xs text-red-600 hover:text-red-800 underline flex items-center space-x-1 mt-1">
                                             <span>Zobacz szczegóły odpowiedzi</span>
@@ -103,57 +130,139 @@
                         </div>
                     @endif
 
-                    <!-- Listed URL -->
+                    <!-- Netgun Error Alert -->
+                    @if($this->hasErrorNetgun($weapon->id))
+                        @php
+                            $error = $this->getErrorNetgun($weapon->id);
+                            $responseUrl = $this->getResponseUrlNetgun($weapon->id);
+                        @endphp
+                        <div class="mb-3 bg-orange-50 border border-orange-200 rounded-lg p-3">
+                            <div class="flex items-start space-x-2">
+                                <svg class="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                </svg>
+                                <div class="flex-1">
+                                    <p class="text-sm text-orange-800 font-medium">Netgun: {{ $error['error'] }}</p>
+                                    @if($responseUrl)
+                                        <a href="{{ $responseUrl }}" target="_blank" class="text-xs text-orange-600 hover:text-orange-800 underline flex items-center space-x-1 mt-1">
+                                            <span>Zobacz szczegóły odpowiedzi</span>
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            </svg>
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- OtoBron Listed URL -->
                     @if($this->isListed($weapon->id) && $this->getListingUrl($weapon->id))
                         <a
                             href="{{ $this->getListingUrl($weapon->id) }}"
                             target="_blank"
-                            class="mb-3 flex items-center justify-center space-x-2 text-green-600 hover:text-green-700 font-medium text-sm"
+                            class="mb-2 flex items-center justify-center space-x-2 text-blue-600 hover:text-blue-700 font-medium text-sm bg-blue-50 py-2 rounded-lg"
                         >
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <span>Zobacz ogłoszenie na otobron.pl</span>
+                            <span>Zobacz na OtoBron.pl</span>
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                             </svg>
                         </a>
                     @endif
 
-                    <!-- Action Button -->
-                    <div wire:loading.remove wire:target="listWeapon({{ $weapon->id }})">
-                        @if($this->isListed($weapon->id))
-                            <button
-                                wire:click="listWeapon({{ $weapon->id }})"
-                                class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
-                            >
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                                <span>Wystaw ponownie</span>
-                            </button>
-                        @else
-                            <button
-                                wire:click="listWeapon({{ $weapon->id }})"
-                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
-                            >
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                </svg>
-                                <span>Wystaw na sprzedaż</span>
-                            </button>
-                        @endif
-                    </div>
-
-                    <!-- Loading State -->
-                    <div wire:loading wire:target="listWeapon({{ $weapon->id }})" class="w-full">
-                        <button disabled class="w-full bg-blue-400 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center space-x-2">
-                            <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <!-- Netgun Listed URL -->
+                    @if($this->isListedNetgun($weapon->id) && $this->getListingUrlNetgun($weapon->id))
+                        <a
+                            href="{{ $this->getListingUrlNetgun($weapon->id) }}"
+                            target="_blank"
+                            class="mb-2 flex items-center justify-center space-x-2 text-orange-600 hover:text-orange-700 font-medium text-sm bg-orange-50 py-2 rounded-lg"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <span>Wysyłanie...</span>
-                        </button>
+                            <span>Zobacz na Netgun.pl</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                        </a>
+                    @endif
+
+                    <!-- Action Buttons -->
+                    <div class="space-y-2">
+                        <!-- OtoBron Button -->
+                        <div wire:loading.remove wire:target="listWeapon({{ $weapon->id }})">
+                            @if($this->isListed($weapon->id))
+                                <button
+                                    wire:click="listWeapon({{ $weapon->id }})"
+                                    class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 text-sm"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    <span>Wystaw ponownie na OtoBron</span>
+                                </button>
+                            @else
+                                <button
+                                    wire:click="listWeapon({{ $weapon->id }})"
+                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 text-sm"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                    <span>Wystaw na OtoBron</span>
+                                </button>
+                            @endif
+                        </div>
+
+                        <!-- OtoBron Loading State -->
+                        <div wire:loading wire:target="listWeapon({{ $weapon->id }})" class="w-full">
+                            <button disabled class="w-full bg-blue-400 text-white font-semibold py-2 px-4 rounded-lg flex items-center justify-center space-x-2 text-sm">
+                                <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Wysyłanie do OtoBron...</span>
+                            </button>
+                        </div>
+
+                        <!-- Netgun Button -->
+                        <div wire:loading.remove wire:target="listWeaponNetgun({{ $weapon->id }})">
+                            @if($this->isListedNetgun($weapon->id))
+                                <button
+                                    wire:click="listWeaponNetgun({{ $weapon->id }})"
+                                    class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 text-sm"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    <span>Wystaw ponownie na Netgun</span>
+                                </button>
+                            @else
+                                <button
+                                    wire:click="listWeaponNetgun({{ $weapon->id }})"
+                                    class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 text-sm"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                    <span>Wystaw na Netgun</span>
+                                </button>
+                            @endif
+                        </div>
+
+                        <!-- Netgun Loading State -->
+                        <div wire:loading wire:target="listWeaponNetgun({{ $weapon->id }})" class="w-full">
+                            <button disabled class="w-full bg-orange-400 text-white font-semibold py-2 px-4 rounded-lg flex items-center justify-center space-x-2 text-sm">
+                                <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Wysyłanie do Netgun...</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -172,27 +281,24 @@
 @push('scripts')
 <script>
     window.addEventListener('weapon-listed', event => {
-        console.log('✅ Weapon listed successfully:', event.detail.weaponId);
+        console.log('✅ Weapon listed successfully on ' + (event.detail.platform || 'unknown') + ':', event.detail.weaponId);
         console.log('🔗 Listing URL:', event.detail.listingUrl);
         console.log('📄 Response saved to:', event.detail.responseFile);
-        // No alert - success is visible in the UI
     });
 
     window.addEventListener('weapon-listing-error', event => {
-        console.error('❌ Failed to list weapon:', event.detail.weaponId);
+        console.error('❌ Failed to list weapon on ' + (event.detail.platform || 'unknown') + ':', event.detail.weaponId);
         console.error('Error:', event.detail.error);
         console.log('📄 Response saved to:', event.detail.responseFile);
-        // Error is displayed in the UI
     });
 
     window.addEventListener('login-success', event => {
-        console.log('✅ Login successful');
-        // Success - page will reload to show logged in state
+        console.log('✅ Login successful to ' + (event.detail.platform || 'unknown'));
     });
 
     window.addEventListener('login-error', event => {
-        console.error('❌ Login failed:', event.detail.message);
-        alert('Błąd logowania:\n\n' + event.detail.message);
+        console.error('❌ Login failed to ' + (event.detail.platform || 'unknown') + ':', event.detail.message);
+        alert('Błąd logowania do ' + (event.detail.platform || 'platformy') + ':\n\n' + event.detail.message);
     });
 </script>
 @endpush
