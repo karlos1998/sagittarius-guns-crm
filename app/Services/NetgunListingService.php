@@ -708,6 +708,10 @@ class NetgunListingService
             // Pretty print form data for debugging
             Log::info("Form data being sent to netgun.pl:\n" . json_encode($formData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 
+            // Build form data as query string (for proper array encoding)
+            $formQuery = http_build_query($formData, '', '&', PHP_QUERY_RFC3986);
+            Log::info("Form query string: " . $formQuery);
+
             $response = $this->client->post($this->config['endpoints']['new_listing'], [
                 'headers' => [
                     'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
@@ -723,7 +727,7 @@ class NetgunListingService
                     'Upgrade-Insecure-Requests' => '1',
                     'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
                 ],
-                'form_params' => $formData,
+                'body' => $formQuery,
                 'cookies' => $cookieJar,
                 'allow_redirects' => true,
             ]);
@@ -979,10 +983,11 @@ class NetgunListingService
             'terms' => 'on',
         ];
 
-        // Add images - use indexed array syntax for Guzzle form_params
-        foreach ($imageUrls as $index => $imageUrl) {
-            $formData["images[{$index}]"] = $imageUrl;
-            $formData["titles[{$index}]"] = '';
+        // Add images - use empty brackets syntax [] for proper form encoding
+        // This will be serialized as images[]=url1&images[]=url2
+        foreach ($imageUrls as $imageUrl) {
+            $formData['images[]'] = $imageUrl;
+            $formData['titles[]'] = '';
         }
 
         return $formData;
