@@ -729,7 +729,7 @@ class NetgunListingService
                 ],
                 'body' => $formQuery,
                 'cookies' => $cookieJar,
-                'allow_redirects' => true,
+                'allow_redirects' => false,
             ]);
 
             $statusCode = $response->getStatusCode();
