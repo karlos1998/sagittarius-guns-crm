@@ -1031,11 +1031,14 @@ class NetgunListingService
             'terms' => 'on',
         ];
 
-        // Add images - use empty brackets syntax [] for proper form encoding
-        // This will be serialized as images[]=url1&images[]=url2
+        // Add images - build as arrays for http_build_query to properly serialize
+        // This will be serialized as images[0]=url1&images[1]=url2 or images[]=url1&images[]=url2
+        $formData['images'] = [];
+        $formData['titles'] = [];
+
         foreach ($imageUrls as $imageUrl) {
-            $formData['images[]'] = $imageUrl;
-            $formData['titles[]'] = '';
+            $formData['images'][] = $imageUrl;
+            $formData['titles'][] = '';
         }
 
         return $formData;
