@@ -765,6 +765,50 @@ class NetgunListingService
                 'has_redirect' => !empty($locationHeader),
             ]);
 
+            // If redirect back to /nowe-ogloszenie, it means validation errors
+            // Fetch the page to see actual error messages
+            if (!empty($locationHeader) && str_ends_with($locationHeader[0], '/nowe-ogloszenie')) {
+                Log::warning("POST /nowe-ogloszenie returned 302 back to form - validation errors likely");
+
+                // Fetch the form page to get validation errors
+                $errorPageResponse = $this->client->get('/nowe-ogloszenie', [
+                    'headers' => [
+                        'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                        'Accept-Language' => 'pl,en-US;q=0.9,en;q=0.8',
+                        'Referer' => $this->config['base_url'] . '/nowe-ogloszenie',
+                        'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+                    ],
+                    'cookies' => $cookieJar,
+                ]);
+
+                $errorBody = $errorPageResponse->getBody()->getContents();
+
+                // Save error page for debugging
+                $errorPath = storage_path("app/netgun_responses/netgun_validation_errors_{$timestamp}.html");
+                $errorContent = "<!-- Validation Error Page -->\n";
+                $errorContent .= "<!-- Weapon ID: {$weapon->id} -->\n";
+                $errorContent .= "<!-- Original redirect: {$locationHeader[0]} -->\n";
+                $errorContent .= $errorBody;
+                file_put_contents($errorPath, $errorContent);
+
+                // Extract validation errors from HTML
+                $validationErrors = $this->extractValidationErrors($errorBody);
+
+                Log::error("Validation errors from netgun.pl", [
+                    'errors' => $validationErrors,
+                    'error_file' => $errorPath,
+                ]);
+
+                return [
+                    'success' => false,
+                    'published' => false,
+                    'message' => 'Błędy walidacji formularza: ' . implode(', ', $validationErrors),
+                    'error' => 'validation_failed',
+                    'validation_errors' => $validationErrors,
+                    'response_file' => $errorPath,
+                ];
+            }
+
             if (!empty($locationHeader) && str_contains($locationHeader[0], '/promowanie-ogloszenia/')) {
                 Log::info("Got 302 redirect to promotion page", ['location' => $locationHeader[0]]);
 
@@ -1046,6 +1090,50 @@ class NetgunListingService
         }
 
         return null;
+    }
+
+    /**
+     * Extract validation errors from HTML response
+     *
+     * @param string $html
+     * @return array
+     */
+    protected function extractValidationErrors(string $html): array
+    {
+        $errors = [];
+
+        // Look for common Laravel validation error patterns
+        // Pattern 1: <span class="invalid-feedback" role="alert">...</span>
+        if (preg_match_all('/<span[^>]*class="invalid-feedback"[^>]*>(.*?)<\/span>/s', $html, $matches)) {
+            foreach ($matches[1] as $error) {
+                $cleanError = strip_tags($error);
+                if (!empty($cleanError)) {
+                    $errors[] = trim($cleanError);
+                }
+            }
+        }
+
+        // Pattern 2: <div class="alert alert-danger">...</div>
+        if (preg_match_all('/<div[^>]*class="alert alert-danger"[^>]*>(.*?)<\/div>/s', $html, $matches)) {
+            foreach ($matches[1] as $error) {
+                $cleanError = strip_tags($error);
+                if (!empty($cleanError)) {
+                    $errors[] = trim($cleanError);
+                }
+            }
+        }
+
+        // Pattern 3: Look for error messages in form groups
+        if (preg_match_all('/<div[^>]*class="[^"]*is-invalid[^"]*"[^>]*>.*?<div[^>]*class="[^"]*error[^"]*"[^>]*>(.*?)<\/div>/s', $html, $matches)) {
+            foreach ($matches[1] as $error) {
+                $cleanError = strip_tags($error);
+                if (!empty($cleanError)) {
+                    $errors[] = trim($cleanError);
+                }
+            }
+        }
+
+        return $errors ?: ['Nieznany błąd walidacji - sprawdź zapisany plik HTML'];
     }
 
     /**
