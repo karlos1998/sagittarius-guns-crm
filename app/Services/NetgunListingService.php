@@ -508,7 +508,9 @@ class NetgunListingService
             $responseBody = json_decode($response->getBody()->getContents(), true);
 
             if (isset($responseBody['file'])) {
-                $imageUrl = $this->config['base_url'] . '/uploader/' . $responseBody['file'];
+                // Use image_base_url (without www) for the image URL in form data
+                // This must match exactly what netgun.pl expects
+                $imageUrl = $this->config['image_base_url'] . '/uploader/' . $responseBody['file'];
                 Log::info("Image uploaded successfully to netgun.pl: {$imageUrl}");
                 return $imageUrl;
             }
@@ -571,7 +573,9 @@ class NetgunListingService
             $responseBody = json_decode($response->getBody()->getContents(), true);
 
             if (isset($responseBody['file'])) {
-                $imageUrl = $this->config['base_url'] . '/uploader/' . $responseBody['file'];
+                // Use image_base_url (without www) for the image URL in form data
+                // This must match exactly what netgun.pl expects
+                $imageUrl = $this->config['image_base_url'] . '/uploader/' . $responseBody['file'];
                 Log::info("Image uploaded successfully to netgun.pl: {$imageUrl}");
                 return $imageUrl;
             }

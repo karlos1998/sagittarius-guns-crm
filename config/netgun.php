@@ -12,6 +12,9 @@ return [
 
     'base_url' => 'https://www.netgun.pl',
 
+    // Base URL without www for image uploads (must match exactly what netgun expects)
+    'image_base_url' => 'https://netgun.pl',
+
     // API endpoints
     'endpoints' => [
         'image_upload' => '/api/image-uploader',
