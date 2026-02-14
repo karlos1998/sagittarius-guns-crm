@@ -229,29 +229,44 @@
                         </div>
 
                         <!-- Netgun Button -->
-                        <div wire:loading.remove wire:target="listWeaponNetgun({{ $weapon->id }})">
-                            @if($this->isListedNetgun($weapon->id))
+                        @if($this->isNetgunRateLimited())
+                            <div class="w-full">
                                 <button
-                                    wire:click="listWeaponNetgun({{ $weapon->id }})"
-                                    class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 text-sm"
+                                    disabled
+                                    class="w-full bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg flex items-center justify-center space-x-2 text-sm cursor-not-allowed netgun-countdown-button"
+                                    data-remaining="{{ $this->getNetgunRateLimitRemaining() }}"
                                 >
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    <span>Wystaw ponownie na Netgun</span>
+                                    <span class="netgun-countdown-text">Poczekaj <span class="netgun-countdown-seconds">{{ $this->getNetgunRateLimitRemaining() }}</span>s</span>
                                 </button>
-                            @else
-                                <button
-                                    wire:click="listWeaponNetgun({{ $weapon->id }})"
-                                    class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 text-sm"
-                                >
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                    </svg>
-                                    <span>Wystaw na Netgun</span>
-                                </button>
-                            @endif
-                        </div>
+                            </div>
+                        @else
+                            <div wire:loading.remove wire:target="listWeaponNetgun({{ $weapon->id }})">
+                                @if($this->isListedNetgun($weapon->id))
+                                    <button
+                                        wire:click="listWeaponNetgun({{ $weapon->id }})"
+                                        class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 text-sm"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                        <span>Wystaw ponownie na Netgun</span>
+                                    </button>
+                                @else
+                                    <button
+                                        wire:click="listWeaponNetgun({{ $weapon->id }})"
+                                        class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 text-sm"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                        </svg>
+                                        <span>Wystaw na Netgun</span>
+                                    </button>
+                                @endif
+                            </div>
+                        @endif
 
                         <!-- Netgun Loading State -->
                         <div wire:loading wire:target="listWeaponNetgun({{ $weapon->id }})" class="w-full">
@@ -299,6 +314,62 @@
     window.addEventListener('login-error', event => {
         console.error('❌ Login failed to ' + (event.detail.platform || 'unknown') + ':', event.detail.message);
         alert('Błąd logowania do ' + (event.detail.platform || 'platformy') + ':\n\n' + event.detail.message);
+    });
+
+    // Netgun rate limit countdown timer
+    function startNetgunCountdown() {
+        const countdownButtons = document.querySelectorAll('.netgun-countdown-button');
+
+        countdownButtons.forEach(button => {
+            let remaining = parseInt(button.dataset.remaining) || 0;
+            const secondsSpan = button.querySelector('.netgun-countdown-seconds');
+            const textSpan = button.querySelector('.netgun-countdown-text');
+
+            if (remaining <= 0) return;
+
+            const interval = setInterval(() => {
+                remaining--;
+
+                if (secondsSpan) {
+                    secondsSpan.textContent = remaining;
+                }
+
+                if (remaining <= 0) {
+                    clearInterval(interval);
+                    // Refresh the component to remove the disabled state
+                    if (window.Livewire) {
+                        const component = window.Livewire.find(document.querySelector('[wire\\:id]')?.getAttribute('wire:id'));
+                        if (component) {
+                            component.$refresh();
+                        }
+                    }
+                }
+            }, 1000);
+        });
+    }
+
+    // Start countdown on page load
+    document.addEventListener('DOMContentLoaded', startNetgunCountdown);
+
+    // Restart countdown after Livewire updates
+    window.addEventListener('livewire:initialized', () => {
+        startNetgunCountdown();
+    });
+
+    window.addEventListener('livewire:updated', () => {
+        startNetgunCountdown();
+    });
+
+    // Handle rate limit event
+    window.addEventListener('netgun-rate-limited', event => {
+        console.warn('⏳ Netgun rate limited:', event.detail.weaponId, 'remaining:', event.detail.remainingSeconds);
+        // Refresh to show the countdown button
+        if (window.Livewire) {
+            const component = window.Livewire.find(document.querySelector('[wire\\:id]')?.getAttribute('wire:id'));
+            if (component) {
+                component.$refresh();
+            }
+        }
     });
 </script>
 @endpush

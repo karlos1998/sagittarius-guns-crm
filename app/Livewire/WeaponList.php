@@ -19,6 +19,9 @@ class WeaponList extends Component
     public $isLoggedIn = false;
     public $isLoggedInNetgun = false;
 
+    const NETGUN_RATE_LIMIT_KEY = 'netgun_last_listing_time';
+    const NETGUN_RATE_LIMIT_SECONDS = 60;
+
     protected $listeners = ['refreshWeapons' => '$refresh'];
 
     public function mount()
@@ -114,6 +117,17 @@ class WeaponList extends Component
 
     public function listWeaponNetgun($weaponId)
     {
+        // Check rate limit before attempting to list
+        if ($this->isNetgunRateLimited()) {
+            $remaining = $this->getNetgunRateLimitRemaining();
+            $this->dispatch('netgun-rate-limited',
+                weaponId: $weaponId,
+                remainingSeconds: $remaining,
+                message: 'Poczekaj ' . $remaining . ' sekund przed wystawieniem kolejnej broni na Netgun'
+            );
+            return;
+        }
+
         $service = new NetgunListingService();
 
         try {
@@ -123,6 +137,9 @@ class WeaponList extends Component
                 unset($this->listingErrorsNetgun[$weaponId]);
                 $this->listedWeaponsNetgun[$weaponId] = $result['listing_url'] ?? null;
                 Cache::put('listed_weapons_netgun', $this->listedWeaponsNetgun, now()->addDays(30));
+
+                // Set rate limit timestamp after successful listing
+                Cache::put(self::NETGUN_RATE_LIMIT_KEY, now()->timestamp, now()->addMinutes(1));
 
                 $this->dispatch('weapon-listed',
                     weaponId: $weaponId,
@@ -220,6 +237,54 @@ class WeaponList extends Component
 
         $filename = basename($error['response_file']);
         return url("/netgun-response/{$filename}");
+    }
+
+    // ==================== NETGUN RATE LIMITING ====================
+
+    /**
+     * Check if Netgun listing is currently rate limited
+     *
+     * @return bool
+     */
+    public function isNetgunRateLimited(): bool
+    {
+        $lastListingTime = Cache::get(self::NETGUN_RATE_LIMIT_KEY);
+
+        if (!$lastListingTime) {
+            return false;
+        }
+
+        $elapsed = now()->timestamp - $lastListingTime;
+        return $elapsed < self::NETGUN_RATE_LIMIT_SECONDS;
+    }
+
+    /**
+     * Get remaining seconds until rate limit expires
+     *
+     * @return int
+     */
+    public function getNetgunRateLimitRemaining(): int
+    {
+        $lastListingTime = Cache::get(self::NETGUN_RATE_LIMIT_KEY);
+
+        if (!$lastListingTime) {
+            return 0;
+        }
+
+        $elapsed = now()->timestamp - $lastListingTime;
+        $remaining = self::NETGUN_RATE_LIMIT_SECONDS - $elapsed;
+
+        return max(0, $remaining);
+    }
+
+    /**
+     * Get the timestamp of last Netgun listing
+     *
+     * @return int|null
+     */
+    public function getNetgunLastListingTime(): ?int
+    {
+        return Cache::get(self::NETGUN_RATE_LIMIT_KEY);
     }
 
     public function getWeaponImageUrl($photos)
