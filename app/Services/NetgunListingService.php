@@ -474,7 +474,7 @@ class NetgunListingService
     protected function uploadSingleImageWithJar(string $photoPath, CookieJar $cookieJar, string $xsrfToken): ?string
     {
         try {
-            $imageContent = Storage::disk('s3')->get($photoPath);
+            $imageContent = Storage::disk(config('weapons.photos_disk'))->get($photoPath);
 
             if (!$imageContent) {
                 Log::error("Failed to get image content from S3: {$photoPath}");
@@ -538,7 +538,7 @@ class NetgunListingService
     {
         try {
             // Get image content from S3
-            $imageContent = Storage::disk('s3')->get($photoPath);
+            $imageContent = Storage::disk(config('weapons.photos_disk'))->get($photoPath);
 
             if (!$imageContent) {
                 Log::error("Failed to get image content from S3: {$photoPath}");

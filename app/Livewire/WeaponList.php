@@ -293,7 +293,7 @@ class WeaponList extends Component
             return null;
         }
 
-        return Storage::disk('s3')->url($photos[0]);
+        return Storage::disk(config('weapons.photos_disk'))->url($photos[0]);
     }
 
     public function render()

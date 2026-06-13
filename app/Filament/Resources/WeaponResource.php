@@ -47,16 +47,7 @@ class WeaponResource extends Resource
                     ->step(0.01)
                     ->label('Cena'),
 
-                Forms\Components\FileUpload::make('photos')
-                    ->multiple()
-                    ->maxFiles(10)
-                    ->maxSize(204800) // 20MB in KB
-                    ->image()
-                    ->imageEditor()
-                    ->columnSpanFull()
-                    ->label('Zdjęcia')
-                    ->disk('s3')
-                    ->directory('weapons'),
+                static::photosUploadField(),
             ]);
     }
 
@@ -95,7 +86,7 @@ class WeaponResource extends Resource
                             return [];
                         }
                         return collect($record->photos)->map(function ($photo) {
-                            return Storage::disk('s3')->url($photo);
+                            return Storage::disk(config('weapons.photos_disk'))->url($photo);
                         })->toArray();
                     }),
 
@@ -127,6 +118,30 @@ class WeaponResource extends Resource
         return [
             //
         ];
+    }
+
+    protected static function photosUploadField(): Forms\Components\FileUpload
+    {
+        $field = Forms\Components\FileUpload::make('photos')
+            ->multiple()
+            ->image()
+            ->imageEditor()
+            ->columnSpanFull()
+            ->label('Zdjęcia')
+            ->disk(config('weapons.photos_disk'))
+            ->directory(config('weapons.photos_directory'));
+
+        $maxFiles = config('weapons.max_photos_per_weapon');
+        if (filled($maxFiles)) {
+            $field->maxFiles((int) $maxFiles);
+        }
+
+        $maxSize = config('weapons.max_upload_kilobytes');
+        if (filled($maxSize)) {
+            $field->maxSize((int) $maxSize);
+        }
+
+        return $field;
     }
 
     public static function getPages(): array

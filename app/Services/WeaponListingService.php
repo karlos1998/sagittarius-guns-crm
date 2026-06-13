@@ -197,7 +197,7 @@ class WeaponListingService
             return null;
         }
 
-        $imageUrl = Storage::disk('s3')->url($photoPath);
+        $imageUrl = Storage::disk(config('weapons.photos_disk'))->url($photoPath);
         return 'b64:' . base64_encode($imageUrl);
     }
 
@@ -216,7 +216,7 @@ class WeaponListingService
         $galleryPhotos = array_slice($photos, 0, 6); // Take up to 6 images
 
         foreach ($galleryPhotos as $photo) {
-            $imageUrl = Storage::disk('s3')->url($photo);
+            $imageUrl = Storage::disk(config('weapons.photos_disk'))->url($photo);
             $galleryImages[] = 'b64:' . base64_encode($imageUrl);
         }
 
